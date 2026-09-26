@@ -6,12 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FamilyVault — Your Family Documents. Safe, Organized, Always Ready.</title>
     <meta name="description" content="FamilyVault is the secure family document management platform to organize IDs, insurance, property, bills, warranties, certificates, and track expiries with instant search." />
-    <!-- Google Fonts: Plus Jakarta Sans -->
+    <meta name="theme-color" content="#05070e" />
+    <!-- Google Fonts: Plus Jakarta Sans optimized non-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    </noscript>
   </head>
-  <body class="bg-slate-50 dark:bg-navy-900 text-slate-900 dark:text-slate-100 min-h-screen antialiased selection:bg-cyan-500 selection:text-white transition-colors duration-200">
+  <body class="bg-slate-50 dark:bg-navy-950 text-slate-900 dark:text-slate-100 min-h-screen antialiased selection:bg-cyan-500 selection:text-white transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

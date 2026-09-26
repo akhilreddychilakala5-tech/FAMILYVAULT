@@ -183,10 +183,16 @@
 
 .animate-float-slow {
   animation: floatSlow 8s ease-in-out infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  contain: paint;
 }
 
 .animate-pulse-slow {
   animation: pulseSlow 6s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  contain: paint;
 }
 
 /* Scanner Animation */

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -7,24 +7,28 @@ import { ToastProvider } from './context/ToastContext';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import QuickSearchModal from './components/QuickSearchModal';
-import DocumentDetailModal from './components/DocumentDetailModal';
-import ShareModal from './components/ShareModal';
 
-// Pages
+// Critical Landing Page (instant paint)
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import OnboardingPage from './pages/OnboardingPage';
-import DashboardPage from './pages/DashboardPage';
-import DocumentsPage from './pages/DocumentsPage';
-import FamilyPage from './pages/FamilyPage';
-import WarrantyPage from './pages/WarrantyPage';
-import BillsPage from './pages/BillsPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import VaultAssistantPage from './pages/VaultAssistantPage';
-import SettingsPage from './pages/SettingsPage';
-import SharedDocumentPage from './pages/SharedDocumentPage';
+
+// Lazy-load other pages on demand
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
+const FamilyPage = lazy(() => import('./pages/FamilyPage'));
+const WarrantyPage = lazy(() => import('./pages/WarrantyPage'));
+const BillsPage = lazy(() => import('./pages/BillsPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const VaultAssistantPage = lazy(() => import('./pages/VaultAssistantPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const SharedDocumentPage = lazy(() => import('./pages/SharedDocumentPage'));
+
+// Lazy-load modals
+const QuickSearchModal = lazy(() => import('./components/QuickSearchModal'));
+const DocumentDetailModal = lazy(() => import('./components/DocumentDetailModal'));
+const ShareModal = lazy(() => import('./components/ShareModal'));
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -84,9 +88,16 @@ const AppContent = () => {
       {!isSharedPage && <Navbar onOpenSearch={() => setSearchOpen(true)} />}
 
       <main className="flex-1">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+        <Suspense
+          fallback={
+            <div className="min-h-[60vh] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+            </div>
+          }
+        >
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/shared/:token" element={<SharedDocumentPage />} />
@@ -168,38 +179,51 @@ const AppContent = () => {
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </main>
 
       {!isSharedPage && <Footer />}
 
       {/* Global Quick Search Modal */}
-      <QuickSearchModal
-        isOpen={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onSelectDocument={(doc) => {
-          setSelectedSearchDoc(doc);
-          setSearchDetailModalOpen(true);
-        }}
-      />
+      {searchOpen && (
+        <Suspense fallback={null}>
+          <QuickSearchModal
+            isOpen={searchOpen}
+            onClose={() => setSearchOpen(false)}
+            onSelectDocument={(doc) => {
+              setSelectedSearchDoc(doc);
+              setSearchDetailModalOpen(true);
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Search Result Detail Modal */}
-      <DocumentDetailModal
-        isOpen={searchDetailModalOpen}
-        onClose={() => setSearchDetailModalOpen(false)}
-        document={selectedSearchDoc}
-        onOpenShare={(doc) => {
-          setSearchDetailModalOpen(false);
-          setShareDoc(doc);
-          setShareModalOpen(true);
-        }}
-      />
+      {searchDetailModalOpen && (
+        <Suspense fallback={null}>
+          <DocumentDetailModal
+            isOpen={searchDetailModalOpen}
+            onClose={() => setSearchDetailModalOpen(false)}
+            document={selectedSearchDoc}
+            onOpenShare={(doc) => {
+              setSearchDetailModalOpen(false);
+              setShareDoc(doc);
+              setShareModalOpen(true);
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Search Result Share Modal */}
-      <ShareModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        document={shareDoc}
-      />
+      {shareModalOpen && (
+        <Suspense fallback={null}>
+          <ShareModal
+            isOpen={shareModalOpen}
+            onClose={() => setShareModalOpen(false)}
+            document={shareDoc}
+          />
+        </Suspense>
+      )}
       </div>
     </div>
   );
