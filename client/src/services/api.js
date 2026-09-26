@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,9 +21,15 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for auth expiration
+// Response interceptor for auth expiration and HTML fallback handling
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    // If the server returned HTML (e.g. Netlify/Vercel SPA fallback to index.html instead of JSON API)
+    if (typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE html')) {
+      return Promise.reject(new Error('Backend API endpoint returned HTML instead of JSON. Ensure the backend server is running or VITE_API_URL is configured.'));
+    }
+    return response.data;
+  },
   (error) => {
     if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       // Clear token on genuine authorization expiration
@@ -66,7 +74,7 @@ export const documentApi = {
   togglePin: (id) => api.patch(`/documents/${id}/pin`),
   toggleEmergency: (id) => api.patch(`/documents/${id}/emergency`),
   downloadDocument: (id) => api.get(`/documents/${id}/download`),
-  downloadFileUrl: (id) => `/api/documents/${id}/file`,
+  downloadFileUrl: (id) => `${apiBaseUrl}/documents/${id}/file`,
 };
 
 // Family Endpoints
