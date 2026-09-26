@@ -42,7 +42,7 @@ const categories = [
 
 const DocumentsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { members } = useAuth();
+  const { members, user } = useAuth();
   const { success, error } = useToast();
 
   const [documents, setDocuments] = useState([]);
@@ -217,9 +217,14 @@ const DocumentsPage = () => {
               className="w-full px-3 py-2.5 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
             >
               <option value="All">All Family Members</option>
-              {members.map((m) => (
-                <option key={m._id} value={m._id}>
-                  {m.name} ({m.relationship})
+              {user?.name && (
+                <option value={user._id || user.id || 'owner'}>
+                  👤 {user.name} (Owner)
+                </option>
+              )}
+              {(members || []).map((m, idx) => (
+                <option key={m._id || m.id || idx} value={m._id || m.id || m.name}>
+                  👤 {m.name} ({m.relation || m.relationship || m.role || 'Member'})
                 </option>
               ))}
             </select>

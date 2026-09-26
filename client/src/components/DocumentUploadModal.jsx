@@ -20,7 +20,7 @@ import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
 const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
-  const { members } = useAuth();
+  const { members, user, family } = useAuth();
   const { success, error, info } = useToast();
 
   const [file, setFile] = useState(null);
@@ -31,10 +31,51 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [extractionDone, setExtractionDone] = useState(false);
 
+  // Compute robust family member options including owner and shared options
+  const memberOptions = React.useMemo(() => {
+    const list = [];
+    if (user?.name) {
+      list.push({
+        id: user._id || user.id || 'owner',
+        name: user.name,
+        role: 'Vault Owner (Self)',
+      });
+    }
+
+    if (Array.isArray(members) && members.length > 0) {
+      members.forEach((m, idx) => {
+        const mId = m._id || m.id || `member_${idx}`;
+        if (!user || (m.name !== user.name && mId !== (user._id || user.id))) {
+          list.push({
+            id: mId,
+            name: m.name || `Family Member ${idx + 1}`,
+            role: m.relation || m.relationship || m.role || 'Dependent',
+          });
+        }
+      });
+    }
+
+    list.push({
+      id: 'shared',
+      name: family?.name || 'Whole Family',
+      role: 'Shared Record',
+    });
+
+    if (list.length === 0) {
+      list.push({
+        id: 'owner',
+        name: 'Account Owner',
+        role: 'Self',
+      });
+    }
+
+    return list;
+  }, [user, members, family]);
+
   // Form Fields
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Identity');
-  const [memberId, setMemberId] = useState('');
+  const [memberId, setMemberId] = useState(() => memberOptions[0]?.id || 'owner');
   const [documentNumber, setDocumentNumber] = useState('');
   const [issuingAuthority, setIssuingAuthority] = useState('');
   const [issueDate, setIssueDate] = useState('');
@@ -43,6 +84,15 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [tags, setTags] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isEmergency, setIsEmergency] = useState(false);
+
+  // Auto-select valid memberId on open or when options change
+  React.useEffect(() => {
+    if (isOpen && memberOptions.length > 0) {
+      if (!memberId || !memberOptions.some((m) => String(m.id) === String(memberId))) {
+        setMemberId(memberOptions[0].id);
+      }
+    }
+  }, [isOpen, memberOptions, memberId]);
 
   const fileInputRef = useRef(null);
 
@@ -104,8 +154,8 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setName(cleanName);
 
     // Auto-select first member if empty
-    if (!memberId && members.length > 0) {
-      setMemberId(members[0]._id);
+    if (!memberId && memberOptions.length > 0) {
+      setMemberId(memberOptions[0].id);
     }
 
     // Run Smart Document Extraction
@@ -119,7 +169,7 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     try {
       const formData = new FormData();
       formData.append('file', fileObj);
-      const selectedMember = members.find((m) => m._id === memberId);
+      const selectedMember = memberOptions.find((m) => String(m.id) === String(memberId));
       if (selectedMember) {
         formData.append('memberName', selectedMember.name);
       }
@@ -168,7 +218,9 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
       formData.append('file', file);
       formData.append('name', name);
       formData.append('category', category);
-      formData.append('memberId', memberId || (members[0] ? members[0]._id : ''));
+      const chosen = memberOptions.find((m) => String(m.id) === String(memberId)) || memberOptions[0];
+      formData.append('memberId', chosen?.id || 'owner');
+      formData.append('holderName', chosen?.name || user?.name || 'Family Member');
       formData.append('documentNumber', documentNumber);
       formData.append('issuingAuthority', issuingAuthority);
       if (issueDate) formData.append('issueDate', issueDate);
@@ -371,11 +423,11 @@ const DocumentUploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
               <select
                 value={memberId}
                 onChange={(e) => setMemberId(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium cursor-pointer"
               >
-                {members.map((m) => (
-                  <option key={m._id} value={m._id}>
-                    {m.name} ({m.relationship})
+                {memberOptions.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    👤 {m.name} — ({m.role})
                   </option>
                 ))}
               </select>
